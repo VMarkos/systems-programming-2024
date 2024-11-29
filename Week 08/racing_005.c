@@ -12,7 +12,7 @@ typedef struct shared_int {
     int c; // Child
 } shared_int;
 
-#define SHM_KEY 1234
+#define SHM_KEY 1236
 #define SHM_SIZE sizeof(shared_int)
 
 int main() {
@@ -36,7 +36,7 @@ int main() {
     counter->c = 0;
     pid = fork();
     if (pid == 0) { // Child process (turn == 1)
-        for (int i = 0; i < 10000; i++) {
+        for (int i = 0; i < 10000000; i++) {
             while (counter->p == 1) {
                 continue;
             }
@@ -45,7 +45,7 @@ int main() {
             counter->c = 0;
         }
     } else { // Parent process (turn == 0)
-        for (int i = 0; i < 10000; i++) {
+        for (int i = 0; i < 10000000; i++) {
             while (counter->c == 1) {
                 continue;
             }

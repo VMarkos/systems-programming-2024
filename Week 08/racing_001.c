@@ -27,19 +27,55 @@ int main() {
     }
     *counter = 0;
     pid = fork();
+    int* temp;
     if (pid == 0) { // Child process
-        for (int i = 0; i < 1000000; i++) {
+        for (int i = 0; i < 10000000; i++) {
             (*counter)++;
         }
     } else { // Parent process
-        for (int i = 0; i < 1000000; i++) {
+        for (int i = 0; i < 10000000; i++) {
             (*counter)++;
         }
         wait(NULL);
     }
-    printf("Final counter value: %d\n", *counter);
+    printf("Final counter value (%d): %d\n", pid, *counter);
     // Detach and remove the shared memory segment
     shmdt(counter);
     shmctl(shmid, IPC_RMID, NULL);
     return 0;
 }
+
+/*
+(*counter)++ is dissected as follows:
+* *counter --> retrieve the value kept at `counter`
+* *counter = *counter + 1; --> Increment the value by 1
+    * Load *counter and 1 into memory (two distinct operations)
+    * Actually compute `*counter + 1` (another distinct operation)
+    * Store the output to *counter (another distinct operation)
+
+1. A bad scenario:
+
+| Parent Process        | Child Process         | *counter |
+------------------------------------------------------------
+| Retrieve *counter(10) |                       | 10       |
+| Retrieve 1            |                       | 10       |
+|                       | Retrieve *counter(10) | 10       |
+| *counter + 1 (11)     |                       | 10       |
+| *counter = 11         |                       | 11       |
+|                       | Retrieve 1            | 11       |
+|                       | *counter + 1 (11)     | 11       |
+|                       | *counter = 11         | 11       | <-- This did not change!
+
+2. A good scenario:
+
+| Parent Process        | Child Process         | *counter |
+------------------------------------------------------------
+| Retrieve *counter(10) |                       | 10       |
+| Retrieve 1            |                       | 10       |
+| *counter + 1 (11)     |                       | 10       |
+| *counter = 11         |                       | 11       |
+|                       | Retrieve *counter(11) | 11       |
+|                       | Retrieve 1            | 11       |
+|                       | *counter + 1 (12)     | 11       |
+|                       | *counter = 12         | 12       | <-- This *did* change!
+*/

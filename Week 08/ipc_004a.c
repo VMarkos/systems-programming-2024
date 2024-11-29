@@ -39,7 +39,7 @@ int main() {
         for (int i = 0; i < 1000000; i++) {
             counter->c = 1; // The child wants to enter its critical section
             while (counter->p == 1) { // If the parent also wants to, then wait
-                continue;
+                counter->c = 0;
             }
             counter->i++; // The critical section
             counter->c = 0; // The child is done
@@ -48,7 +48,7 @@ int main() {
         for (int i = 0; i < 1000000; i++) {
             counter->p = 1; // The parent wants to enter its critical section
             while (counter->c == 1) { // If the child also wants to, then wait
-                continue;
+                counter->p = 0;
             }
             counter->i++; // The critical section
             counter->p = 0; // The parent is done

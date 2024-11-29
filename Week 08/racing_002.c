@@ -7,8 +7,8 @@
 #include <sys/wait.h>
 
 typedef struct shared_int {
-    int i;
-    int turn;
+    int i; // Shared counter
+    int turn; // Shared turn flag
 } shared_int;
 
 #define SHM_KEY 1234
@@ -30,24 +30,26 @@ int main() {
         perror("shmat");
         exit(1);
     }
+    char* buf;
     counter->i = 0;
     counter->turn = 0;
     pid = fork();
     if (pid == 0) { // Child process (turn == 1)
-        for (int i = 0; i < 1000000; i++) {
-            while (counter->turn != 1) {
+        for (int i = 0; i < 10; i++) {
+            while (counter->turn != 1) { // This is roughly "Wait for your turn!"
                 continue;
             }
-            counter->i++;
-            counter->turn = 0;
+            counter->i++; // This is the critical section for the child
+            counter->turn = 0; // This is "signaling" that it is the parent's turn
         }
     } else { // Parent process (turn == 0)
-        for (int i = 0; i < 1000000; i++) {
-            while (counter->turn != 0) {
+        for (int i = 0; i < 10; i++) {
+            // scanf("%s", buf); // Think of this as a call to a third-party process that takes loooong
+            while (counter->turn != 0) { // This is roughly "Wait for your turn!"
                 continue;
             }
-            counter->i++;
-            counter->turn = 1;
+            counter->i++; // This is the critical section for the parent
+            counter->turn = 1; // This is "signaling" that it is the child's turn
         }
         wait(NULL);
     }
